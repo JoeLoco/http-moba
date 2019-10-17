@@ -1,0 +1,26 @@
+#world{
+    width: 640px;
+    height: 280px;
+    border: 1px solid;
+    position: relative;
+}
+
+.player {
+    position: absolute;
+    width: 10px;
+    height: 10px;                    
+}
+
+.class-knight{
+    background-color: red;
+}
+
+.class-archer{
+    background-color: green;
+}   
+
+#console {
+    height: 200px;
+    width: 640px;
+    overflow: scroll;
+}             

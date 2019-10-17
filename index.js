@@ -12,12 +12,10 @@ const PlayerFactory = require('./classes/PlayerFactory.js');
 //# Skills                                        #
 //#################################################
 
-
-
 const gameState = {
   cicle: 1,
   players: [],
-  events: [],  
+  events: [],
 }
 
 //#################################################
@@ -121,7 +119,6 @@ app.get('/load', function(req, res) {
 
 app.post('/join', function(req, res) { 
   const data = req.body;
-  //const player = Object.assign({}, playerBase);
   const player = PlayerFactory.build(data.class);
   player.id = uuid.v4();
   player.x = randomInt(0,63); 
@@ -130,7 +127,7 @@ app.post('/join', function(req, res) {
   res.json(player);
 });
 
-app.post('/ping', function(req, res) { 
+app.post('/action', function(req, res) { 
   const data = req.body;
   console.log(data);
   const player = getPlayerById(data.player_id);

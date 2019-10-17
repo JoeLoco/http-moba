@@ -1,251 +1,35 @@
 <html>
-    <head>
-            <script
-            src="https://code.jquery.com/jquery-3.4.1.min.js"
-            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-            crossorigin="anonymous"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.2/howler.min.js" integrity="sha256-El7dyxdVp1e1v0xgjrrpzr5+BO29pwP0Qfl40VDffiI=" crossorigin="anonymous"></script>                        
-            <style type="text/css">
-                #world{
-                    width: 640px;
-                    height: 280px;
-                    border: 1px solid;
-                    position: relative;
-                }
 
-                .player {
-                    position: absolute;
-                    width: 10px;
-                    height: 10px;                    
-                }
+<head>
+  <link rel="stylesheet" type="text/css" href="css/game-client.css">
+</head>
 
-                .class-knight{
-                    background-color: red;
-                }
+<body>
+  <div id='login'>
+    <select id="class">
+      <option value="knight">Cavaleiro</option>
+      <option value="archer">Arqueiro</option>
+    </select>
+    <input type='button' value='join' id="join">
+  </div>
+  <div>
+    <div>buffer.action: <label id="buffer-action">none</label></div>
+    <div>buffer.direction: <label id="buffer-direction">down</label></div>
+    <div>player.id: <label id="player-id">?</label></div>
+    <div>player.hp: <label id="player-hp">?</label></div>
+  </div>
 
-                .class-archer{
-                    background-color: green;
-                }   
+  <div id='world'></div>
 
-                #console {
-                    height: 200px;
-                    width: 640px;
-                    overflow: scroll;
-                }             
-            </style>
-    </head>
-    <body>
+  <div id="console"></div>
 
-        <div id='login'>
-            <select id="class">
-                <option value="knight">Cavaleiro</option>
-                <option value="archer">Arqueiro</option>
-            </select> 
-            <input type='button' value='join' id="join">
-        </div>
-        <div>
-                <div>buffer.action: <label id="buffer-action">none</label></div>
-                <div>buffer.direction: <label id="buffer-direction">down</label></div>
-        </div>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.2/howler.min.js"
+    integrity="sha256-El7dyxdVp1e1v0xgjrrpzr5+BO29pwP0Qfl40VDffiI=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.core.js" integrity="sha256-tsIbwIT+4qFYQl3lJqYOZst6ot+JaR73T5eusuTukXM=" crossorigin="anonymous"></script>  
+  <script src="js/multikey.js"></script>
+  <script src="js/game-client.js"></script>
+</body>
 
-
-        <div id='world'>
-            
-        </div>
-
-        <div id="console">
-
-        </div>
-
-        <script>
-
-            var sounds = {
-                hard_blow: new Howl({ src: ['hard_blow.wav']}),
-                damage: new Howl({ src: ['damage.wav']})
-            };
-
-            var lastSoundTimestamp = 0;
-
-            jQuery.multipress = function (keys, handler) {
-                'use strict';
-
-                if (keys.length === 0) {
-                    return;
-                }
-
-                var down = {};
-                jQuery(document).keydown(function (event) {
-                    down[event.keyCode] = true;
-                }).keyup(function (event) {
-                    // Copy keys array, build array of pressed keys
-                    var remaining = keys.slice(0),
-                        pressed = Object.keys(down).map(function (num) { return parseInt(num, 10); }),
-                        indexOfKey;
-                    // Remove pressedKeys from remainingKeys
-                    jQuery.each(pressed, function (i, key) {
-                        if (down[key] === true) {
-                            down[key] = false;
-                            indexOfKey = remaining.indexOf(key);
-                            if (indexOfKey > -1) {
-                                remaining.splice(indexOfKey, 1);
-                            }
-                        }
-                    });
-                    // If we hit all the keys, fire off handler
-                    if (remaining.length === 0) {
-                        event.stopPropagation();
-                        handler(event);                        
-                    }
-                });
-            };
-            
-            function render(data) {
-                const tileSize = 10; 
-                $("#world").empty();
-                for(player of data.players) {
-                    $("#world").append(`<div class='player class-${player.class}' style='top: ${player.y * tileSize};left: ${player.x * tileSize}'></div>`);
-                }
-
-                $("#console").empty();
-
-                
-                const events = data.events.reverse().map((event)=>{
-                    event.tags.map((tag)=>{
-                        if(event.timestamp <= lastSoundTimestamp){
-                            return;
-                        }                            
-                        sounds[tag].play();
-                        lastSoundTimestamp = event.timestamp
-                    })
-                    return `${event.timestamp} - ${event.message} - [${event.tags.join(',')}]}`;
-                });
-
-                
-
-                $("#console").html(events.join('<br>'));
-            }
-
-            player_id = $("#player_id").val();
-            $("#player_id").change(function(){
-                player_id = $("#player_id").val();
-            });
-
-            const buffer = {                
-                action: "none",
-                direction: "down",     
-            }
-
-            function setAction(action, direction) {
-                buffer.action = action;
-                buffer.direction = direction;
-                refreshDebug()                            
-            }
-
-            function refreshDebug() {
-                $("#buffer-action").html(buffer.action);
-                $("#buffer-direction").html(buffer.direction);   
-            }
-
-            function refresh() {
-                $.get('http://localhost:5000/load',function(data) {
-                    render(data);
-                });
-            }
-
-            function ping() {
-                const data = {
-                    player_id: player_id,
-                    action: buffer.action,
-                    direction: buffer.direction,     
-                }
-
-                $.ajax({
-                    url: 'http://localhost:5000/ping',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(data),
-                    success: function(data){
-                        console.log(data);
-                        render(data)
-                    }
-                });
-            }
-            
-            setInterval( function() {
-                if(buffer.action=="none") {
-                    refresh();
-                    return;
-                }
-                ping();
-                buffer.action="none";
-                refreshDebug();
-            },1000);
-
-            const keys = [];
-            keys[87] = "up";
-            keys[83] = "down";
-            keys[65] = "left";
-            keys[68] = "right";
-
-            const KEY_UP = 87;
-            const KEY_DOWN = 83;
-            const KEY_LEFT = 65;
-            const KEY_RIGHT = 68;
-
-            const KEY_G = 71;            
-            const KEY_H = 72;            
-            const KEY_J = 74;
-
-            $.multipress([KEY_UP], function() {
-                setAction("move_up", "up");
-            });
-
-            $.multipress([KEY_DOWN], function() {
-                setAction("move_down", "down");
-            });
-
-            $.multipress([KEY_LEFT], function() {
-                setAction("move_left", "left");
-            });
-
-            $.multipress([KEY_RIGHT], function() {
-                setAction("move_right", "right");
-            });
-
-            $.multipress([KEY_UP, KEY_G], function() {
-                setAction("use_skill_slot_a", "up");
-            }); 
-
-            $.multipress([KEY_DOWN, KEY_G], function() {
-                setAction("use_skill_slot_a", "down");
-            }); 
-
-            $.multipress([KEY_LEFT, KEY_G], function() {
-                setAction("use_skill_slot_a", "left");
-            }); 
-
-            $.multipress([KEY_RIGHT, KEY_G], function() {
-                setAction("use_skill_slot_a", "right");
-            }); 
-            
-            $("#join").click(function() {
-                $("#login").hide();
-                const data = {
-                    class: $("#class").val()
-                }
-                $.ajax({
-                    url: 'http://localhost:5000/join',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(data),
-                    success: function(data){                 
-                        player_id = data.id;
-                    }
-                });
-            });
-
-            refresh();
-
-        </script>
-    </body>
 </html>
