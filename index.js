@@ -6,13 +6,13 @@ var uuid = require('uuid');
 app.use(bodyParser.json());
 app.use(express.static('public'));
 const randomInt = require('random-int');
-const knight = require('./classes/knight/Knight.js');
+const PlayerFactory = require('./classes/PlayerFactory.js');
 
 //#################################################
 //# Skills                                        #
 //#################################################
 
-const skills = {};
+
 
 const gameState = {
   cicle: 1,
@@ -52,11 +52,16 @@ const getPlayerSkillBySlot = (skill_slot, player) => {
   return player.getSkillName(skill_slot);
 }
 
-const event = (event)=>{
-  const format = `${new Date().toISOString()} - ${event}`;
-  gameState.events.push(format);
+const emitEvent = (message, tags = [])=>{
+  const event = {
+    timestamp: new Date().getTime(),
+    message,
+    tags
+  }
+
+  gameState.events.push(event);
   gameState.events = gameState.events.slice(-20);
-  console.log(format); 
+  console.log(event); 
 }
 
 //#################################################
@@ -68,33 +73,33 @@ const actions = {}
 actions["move_down"] = (player, data) => {
   if(canMoveTo(player.x,player.y + 1)) {
     player.y++;
-    event(`player '${player.id}' move to ${player.x},${player.y}`); 
+    emitEvent(`player '${player.id}' move to ${player.x},${player.y}`); 
   }
 }
 
 actions["move_up"] = (player, data) => {
   if(canMoveTo(player.x,player.y - 1)) {
     player.y--;
-    event(`player '${player.id}' move to ${player.x},${player.y}`); 
+    emitEvent(`player '${player.id}' move to ${player.x},${player.y}`); 
   }
 }
 
 actions["move_left"] = (player, data) => {
   if(canMoveTo(player.x - 1,player.y)) {
     player.x--;
-    event(`player '${player.id}' move to ${player.x},${player.y}`); 
+    emitEvent(`player '${player.id}' move to ${player.x},${player.y}`); 
   }
 }
 
 actions["move_right"] = (player, data) => {
   if(canMoveTo(player.x + 1,player.y)) {
     player.x++;
-    event(`player '${player.id}' move to ${player.x},${player.y}`); 
+    emitEvent(`player '${player.id}' move to ${player.x},${player.y}`); 
   }
 }
 
 actions["use_skill_slot_a"] = (player) => {
-  event(`player ${player.id} use ${getPlayerSkillBySlot("slot_a",player)}`); 
+  emitEvent(`player ${player.id} use ${getPlayerSkillBySlot("slot_a",player)}`, ['hard_blow']); 
   const targets = getTargets("slot_a", player);
 
   if(targets.length == 0) {
@@ -103,7 +108,7 @@ actions["use_skill_slot_a"] = (player) => {
   const target = targets[0];
   const damage = calculateDamage("slot_a", player, target);
   target.hp -= damage;
-  event(`player ${target.id} receive ${damage} damage from ${player.id}`)  
+  emitEvent(`player ${target.id} receive ${damage} damage from ${player.id}`,['damage'])  
 }
 
 setInterval(()=>{
@@ -117,8 +122,7 @@ app.get('/load', function(req, res) {
 app.post('/join', function(req, res) { 
   const data = req.body;
   //const player = Object.assign({}, playerBase);
-  const player = new knight();
-  player.class = data.class;
+  const player = PlayerFactory.build(data.class);
   player.id = uuid.v4();
   player.x = randomInt(0,63); 
   player.y = randomInt(0,27); 

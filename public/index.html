@@ -4,6 +4,7 @@
             src="https://code.jquery.com/jquery-3.4.1.min.js"
             integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
             crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.1.2/howler.min.js" integrity="sha256-El7dyxdVp1e1v0xgjrrpzr5+BO29pwP0Qfl40VDffiI=" crossorigin="anonymous"></script>                        
             <style type="text/css">
                 #world{
                     width: 640px;
@@ -58,6 +59,13 @@
 
         <script>
 
+            var sounds = {
+                hard_blow: new Howl({ src: ['hard_blow.wav']}),
+                damage: new Howl({ src: ['damage.wav']})
+            };
+
+            var lastSoundTimestamp = 0;
+
             jQuery.multipress = function (keys, handler) {
                 'use strict';
 
@@ -99,7 +107,22 @@
                 }
 
                 $("#console").empty();
-                $("#console").html(data.events.reverse().join('<br>'));
+
+                
+                const events = data.events.reverse().map((event)=>{
+                    event.tags.map((tag)=>{
+                        if(event.timestamp <= lastSoundTimestamp){
+                            return;
+                        }                            
+                        sounds[tag].play();
+                        lastSoundTimestamp = event.timestamp
+                    })
+                    return `${event.timestamp} - ${event.message} - [${event.tags.join(',')}]}`;
+                });
+
+                
+
+                $("#console").html(events.join('<br>'));
             }
 
             player_id = $("#player_id").val();

@@ -1,16 +1,16 @@
 const Player = require('../Player');
-const HardBlow = require('./skills/HardBlow');
+const DoubleHit = require('./skills/DoubleHit');
 
 module.exports = class Knight extends Player{
     
     constructor() {
         super();
-        this.class = "knight"
+        this.class = "archer"        
         this.skills = {
-            "hard_blow": new HardBlow,
+            "double_hit": new DoubleHit(),
         }
         this.slots = {
-            slot_a: "hard_blow"
+            slot_a: "double_hit"
         }
     }
 
