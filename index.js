@@ -46,10 +46,6 @@ const getTargets = (skill_slot, player) => {
   return player.getTargets(skill_slot, gameState.players); 
 }
 
-const getPlayerSkillBySlot = (skill_slot, player) => {
-  return player.getSkillName(skill_slot);
-}
-
 const emitEvent = (message, tags = [])=>{
   const event = {
     timestamp: new Date().getTime(),
@@ -97,16 +93,17 @@ actions["move_right"] = (player, data) => {
 }
 
 actions["use_skill_slot_a"] = (player) => {
-  emitEvent(`player ${player.id} use ${getPlayerSkillBySlot("slot_a",player)}`, ['hard_blow']); 
-  const targets = getTargets("slot_a", player);
-
-  if(targets.length == 0) {
-    return;
+  
+  if(!player.skillEnabled("slot_a")) {
+    emitEvent(`player ${player.id} can't use ${player.getSkillName("slot_a")}`); 
+    return; 
   }
-  const target = targets[0];
-  const damage = calculateDamage("slot_a", player, target);
-  target.hp -= damage;
-  emitEvent(`player ${target.id} receive ${damage} damage from ${player.id}`,['damage'])  
+
+  emitEvent(`player ${player.id} use ${player.getSkillName("slot_a")}`, ['hard_blow']); 
+  
+  player.useSkill("slot_a", gameState.players);
+  
+  // emitEvent(`player ${target.id} receive ${damage} damage from ${player.id}`,['damage'])  
 }
 
 setInterval(()=>{

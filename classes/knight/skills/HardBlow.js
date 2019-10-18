@@ -5,6 +5,7 @@ module.exports = class HardBlow extends Skill {
   constructor() {
     super();
     this.label = "Hard Blow";
+    this.coolDownInSeconds = 10;
   }
 
   getDamage(player, target) {

@@ -2,6 +2,8 @@ var _ = require('lodash');
 
 module.exports = class Skill {
   constructor() {
+    this.coolDownInSeconds = 0;
+    this.usedAt = 0;
   }
 
   getPositionByDirection(player, distance = 1) {
@@ -23,6 +25,18 @@ module.exports = class Skill {
     return _.find(players, (other) => {
       return x == other.x && y == other.y
     });
+  }
+
+  use() {
+    this.usedAt = new Date().getTime();
+  }
+
+  enabled() {
+    console.log(new Date().getTime(),this.usedAt, (this.coolDownInSeconds * 1000));
+    if ((new Date().getTime() - this.usedAt) > (this.coolDownInSeconds * 1000)) {
+      return true;
+    }
+    return false;  
   }
 
 }
